@@ -1,5 +1,5 @@
 # NumericInputDemo
-<em>Demo using textboxes which restricts input to  numeric data only  and uses the ErrorProvider control for user feedback.</em>
+<em>Demo using textboxes which restricts input to numeric data only; and uses the ErrorProvider control for user feedback.</em>
 <hr>
 
 NUMERIC INPUT DEMO
