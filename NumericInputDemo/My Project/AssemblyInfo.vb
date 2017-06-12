@@ -9,7 +9,7 @@ Imports System.Runtime.InteropServices
 ' Review the values of the assembly attributes
 
 <Assembly: AssemblyTitle("Numeric Input Demo")>
-<Assembly: AssemblyDescription("Demo using Textboxes for numeric input and the ErrorProvider.")>
+<Assembly: AssemblyDescription("Demo for numeric input and the ErrorProvider.")>
 <Assembly: AssemblyCompany("Bolen Computers")>
 <Assembly: AssemblyProduct("Numeric Input Demo")>
 <Assembly: AssemblyCopyright("Copyright ©  2017")>
