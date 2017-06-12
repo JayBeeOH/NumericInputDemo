@@ -24,7 +24,11 @@
 ' Author:         Joseph L. Bolen
 ' Date Created:   10 JUN 2017
 '
-' Description:    Demo using Textboxes for numeric input and the ErrorProvider.
+' Description:    Demo for numeric input and the ErrorProvider.
+'
+'                 Note: The KeyPress event and the MaskedTextBox can shape the data,
+'                       however both still require a Validating event to ensure
+'                       that data is required or within a correct range.
 '
 '                 Documentation is at:
 '                   App's documentation is at:  https://jaybeeoh.github.io/NumericInputDemo/
@@ -43,9 +47,18 @@ Public Class MainLine
 
         ' Allow tabbing when using ErrorProvider
         AutoValidate = Windows.Forms.AutoValidate.EnableAllowFocusChange
+
+        NumericMaskedTextBox.BeepOnError = True
+        NumericMaskedTextBox.Mask = "990"
+
+        MyNumericUpDwn.Minimum = 0
+        MyNumericUpDwn.Maximum = 100
+
     End Sub
 
-    ' Allow only Carriage Return (13), BackSpace(8) and Period(46) and Numbers.
+#Region "     KeyPress example code."
+
+    ' Allow only Carriage Return (13), BackSpace(8), Negative sign(45), Period(46) and Numbers.
     Private Sub KeyPressTextBox_KeyPress(sender As Object, e As KeyPressEventArgs) _
         Handles KeyPressTextBox.KeyPress
 
@@ -53,12 +66,32 @@ Public Class MainLine
         MyErrorProvider.SetError(ctrl, String.Empty)
         If Asc(e.KeyChar) <> 13 AndAlso
             Asc(e.KeyChar) <> 8 AndAlso
+            Asc(e.KeyChar) <> 45 AndAlso
             Asc(e.KeyChar) <> 46 AndAlso
             Not IsNumeric(e.KeyChar) Then
+            Beep()
             MyErrorProvider.SetError(ctrl, "Please enter numbers only.")
             e.Handled = True
+            Exit Sub
         End If
+
+        ' Negative sign must be first character.
+        If Asc(e.KeyChar) = 45 AndAlso
+                ctrl.Text.Length > 1 Then
+            e.Handled = True
+        End If
+
+        ' Only one decimal point allowed using LINQ.
+        If Asc(e.KeyChar) = 46 AndAlso
+            ctrl.Text.Where(Function(ch) (ch = "."c)).Count() > 0 Then
+            e.Handled = True
+        End If
+
     End Sub
+
+#End Region
+
+#Region "     Validating event example code."
 
     Private Sub ValidatingTextBox_Validating(sender As Object, e As CancelEventArgs) _
         Handles ValidatingTextBox.Validating
@@ -70,11 +103,50 @@ Public Class MainLine
             ValidateIsNumeric(ctrl.Text)
             ValidateInRange(ctrl.Text, 0, 100)
         Catch ex As Exception
+            Beep()
             MyErrorProvider.SetError(ctrl, ex.Message)
             e.Cancel = True
         End Try
     End Sub
 
+#End Region
+
+#Region "     MaskedTextBox example code."
+
+    Private Sub NumericMaskedTextBox_MaskInputRejected(sender As Object, e As MaskInputRejectedEventArgs) _
+        Handles NumericMaskedTextBox.MaskInputRejected
+
+        Dim maskedTB As MaskedTextBox = CType(sender, MaskedTextBox)
+        MyErrorProvider.SetError(maskedTB, String.Empty)
+
+        If maskedTB.MaskFull Then
+            MyErrorProvider.SetError(maskedTB,
+                                     "You cannot enter any more data into the field. Delete some digits in order to insert more data.")
+        Else
+            MyErrorProvider.SetError(maskedTB,
+                                    $"Error: {e.RejectionHint} at position {e.Position + 1}.")
+            ' Or ...
+            ' $"Error: Digit required at positon {e.Position + 1}.")
+
+        End If
+    End Sub
+
+    Private Sub NumericMaskedTextBox_Validating(sender As Object, e As CancelEventArgs) _
+        Handles NumericMaskedTextBox.Validating
+
+        Dim ctrl As Control = CType(sender, Control)
+        MyErrorProvider.SetError(ctrl, String.Empty)
+        Try
+            ValidateInRange(ctrl.Text, 0, 100)
+        Catch ex As Exception
+            Beep()
+            MyErrorProvider.SetError(ctrl, ex.Message)
+            e.Cancel = True
+        End Try
+
+    End Sub
+
+#End Region
 
     Private Sub SubmitButton_Click(sender As Object, e As EventArgs) _
         Handles SubmitButton.Click
@@ -97,6 +169,8 @@ Public Class MainLine
 
         e.Cancel = False    ' Allow close with errors pending using ErrorProvider.
     End Sub
+
+#Region "    Validation Functions."
 
     ' Normally, these and other Validation functions as placed in their own module.
     Public Function ValidateIsRequired(ByVal value As String) As Boolean
@@ -132,5 +206,7 @@ Public Class MainLine
             Return True
         End If
     End Function
+
+#End Region
 
 End Class
